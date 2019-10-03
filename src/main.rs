@@ -1,6 +1,11 @@
 use serenity;
 
+mod data;
+mod error;
 
 fn main() {
-    println!{"Hello, World!"}
+    let p = std::path::Path::new("./config.yaml");
+    let info = data::config::get_data_handler(&p);
+
+    dbg! {info};
 }
