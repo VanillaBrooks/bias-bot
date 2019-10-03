@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_yaml;
 
 use super::super::error::Error;
@@ -16,49 +16,31 @@ use std::io::prelude::*;
 
 use super::database;
 
-// pub fn get_files(path: &str) -> Result<cpu::Data, Error> {
-//     let reader = fs::File::open(path)?;
+pub fn  get_data_handler <'a> (path: &'a Path) -> Result<database::Database <'a>, Error> {
+    let reader = fs::File::open(path)?;
+    let ser_data: Data = serde_yaml::from_reader(reader)?;
 
-//     let ser_data: user::Data = serde_yaml::from_reader(reader)?;
+    let db = database::Database::new(&path)?;
 
-//     // let downloader = Downloader::new(ser_data.path());
-//     let mut previous_data = get_older_data(ser_data)?;
-//     // let mut previous_hm = previous_data.to_hashmap();
+    let download = Downloader::new(ser_data.path());
 
-//     // Ok(ser_data)
+    for show in &ser_data.shows {
+        db.new_anime(&show.name);
 
-//     unimplemented!()
-// }
+        for character in &show.characters {
+            db.new_character(&show.name, &character.name);
 
-// fn get_older_data<'a>(data: user::Data) -> Result<cpu::RefData<'a>, Error> {
-//     let save_location = data.path();
-//     // create the directory if it does not exist
-//     if !save_location.is_dir() {
-//         fs::create_dir_all(save_location)?;
-//     }
+            for link in &character.links {
+                if db.need_to_download(&link)? {
+                    let hash = download.get(&link)?;
+                    db.insert_new_file(&link, &hash, &show.name, &character.name);
+                }
+            }
+        }
+    }
 
-//     let file_path = save_location.join("previously_saved.yaml");
-
-//     let previous = match file_path.is_file() {
-//         true => {
-//             let file = fs::File::open(&file_path)?;
-//             let ser: Result<cpu::Data, _> = serde_yaml::from_reader(file);
-//             match ser {
-//                 Ok(ser_data) => ser_data.to_ref(data)?,
-//                 Err(_) => {
-//                     println! {"error when reading from the generated config file"};
-//                     cpu::RefData::new()
-//                 }
-//             }
-//         }
-//         false => {
-//             fs::File::create(&file_path)?;
-//             cpu::RefData::new()
-//         }
-//     };
-
-//     Ok(previous)
-// }
+    Ok(db)
+}
 
 struct Downloader<'a> {
     client: reqwest::Client,

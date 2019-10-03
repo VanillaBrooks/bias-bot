@@ -4,7 +4,8 @@ mod data;
 mod error;
 
 fn main() {
-    // let info = data::config::get_files("config.yaml");
+    let p = std::path::Path::new("./config.yaml");
+    let info = data::config::get_data_handler(&p);
 
-    // dbg! {info};
+    dbg! {info};
 }
