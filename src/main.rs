@@ -1,6 +1,10 @@
 use serenity;
 
+mod data;
+mod error;
 
 fn main() {
-    println!{"Hello, World!"}
+    let info = data::config::get_files("config.yaml");
+
+    dbg! {info};
 }

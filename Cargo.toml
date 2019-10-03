@@ -11,3 +11,5 @@ serenity = "0.7.1"
 serde_yaml = "0.8.9"
 
 serde = {version="1.0.101", features=["serde_derive"]}
+
+reqwest = "0.9.21"
