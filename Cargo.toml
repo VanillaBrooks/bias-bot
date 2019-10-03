@@ -7,9 +7,15 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+#discord api
 serenity = "0.7.1"
-serde_yaml = "0.8.9"
 
+# postgres database
+postgres = "0.15.2"
+
+# serde 
+serde_yaml = "0.8.9"
 serde = {version="1.0.101", features=["serde_derive"]}
 
+# pulling pictures
 reqwest = "0.9.21"

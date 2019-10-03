@@ -1,3 +1,4 @@
+use postgres;
 use reqwest;
 use serde_yaml;
 
@@ -15,9 +16,11 @@ macro_rules! from {
 pub enum Error {
     SerdeYaml(serde_yaml::Error),
     IOError(std::io::Error),
-    ReqwestError(reqwest::Error),
+    Reqwest(reqwest::Error),
+    Postgres(postgres::Error),
 }
 
 from! {serde_yaml::Error, Error::SerdeYaml}
 from! {std::io::Error, Error::IOError}
-from! {reqwest::Error, Error::ReqwestError}
+from! {reqwest::Error, Error::Reqwest}
+from! {postgres::Error, Error::Postgres}
