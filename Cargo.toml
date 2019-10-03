@@ -1,0 +1,13 @@
+[package]
+name = "bias-bot"
+version = "0.1.0"
+authors = ["VanillaBrooks <brookskarlik@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serenity = "0.7.1"
+serde_yaml = "0.8.9"
+
+serde = {version="1.0.101", features=["serde_derive"]}
