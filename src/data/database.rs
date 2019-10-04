@@ -1,6 +1,8 @@
+#![allow(dead_code)]
+
+
 use serde::{Deserialize, Serialize};
 use serde_yaml;
-use std::collections::HashMap;
 
 use std::fs;
 use std::io;
@@ -38,23 +40,21 @@ impl DatabaseConfig {
 }
 
 #[derive(Debug)]
-pub struct Database <'a> {
+pub struct Database<'a> {
     conn: postgres::Connection,
     save_folder: &'a std::path::Path,
 }
 
-impl <'a> Database <'a> {
+impl<'a> Database<'a> {
     pub fn new(save_path: &'a std::path::Path) -> Result<Self, Error> {
         let config = DatabaseConfig::new()?;
         let url = config.connection_url();
         let connection = postgres::Connection::connect(url, postgres::TlsMode::None)?;
 
-        Ok(
-            Self {
-                conn: connection,
-                save_folder: save_path,
-            }
-        )
+        Ok(Self {
+            conn: connection,
+            save_folder: save_path,
+        })
     }
 
     pub fn get_all_urls(&self) -> Result<HashSet<String>, Error> {
@@ -107,7 +107,14 @@ impl <'a> Database <'a> {
         let file_id: u32 = row.get(3);
         let user_id: u32 = row.get(4);
 
-        Ok(Picture::new(file_name, character, anime, file_id, user_id, self.save_folder))
+        Ok(Picture::new(
+            file_name,
+            character,
+            anime,
+            file_id,
+            user_id,
+            self.save_folder,
+        ))
     }
 
     pub fn insert_new_rating(&self, picture: &Picture, rating: u8) -> Result<(), Error> {
@@ -118,7 +125,7 @@ impl <'a> Database <'a> {
             ),
             INSERT INTO rating (user_id, file_id, score) VALUES ($1, $2, $3)";
 
-        let data = self.conn.query(
+        self.conn.query(
             &query,
             &[&picture.user_id, &picture.file_id, &(rating as u32)],
         )?;
@@ -180,8 +187,7 @@ impl <'a> Database <'a> {
             )
             INSERT INTO files (link, character_id, file_name) VALUES ($3, (select * from curr_char_id), $4)";
 
-        let ans = self
-            .conn
+        self.conn
             .query(&query, &[&anime_name, &character_name, &link, &file_name])?;
 
         Ok(())
@@ -189,33 +195,43 @@ impl <'a> Database <'a> {
 }
 
 #[derive(Debug)]
-pub struct Picture <'a> {
+pub struct Picture<'a> {
     file_name: String,
-    pub character_name: String,
-    pub anime_name: String,
+    character_name: String,
+    anime_name: String,
     file_id: u32,
     user_id: u32,
-    save_folder: &'a path::Path
+    save_folder: &'a path::Path,
 }
-impl <'a> Picture  <'a> {
-    fn new(path: String, name: String, anime: String, file_id: u32, user_id: u32, save_folder: &'a path::Path) -> Self {
+impl<'a> Picture<'a> {
+    fn new(
+        path: String,
+        name: String,
+        anime: String,
+        file_id: u32,
+        user_id: u32,
+        save_folder: &'a path::Path,
+    ) -> Self {
         Self {
             file_name: path,
             character_name: name,
             anime_name: anime,
             file_id: file_id,
             user_id: user_id,
-            save_folder: save_folder
+            save_folder: save_folder,
         }
     }
-    fn file_path(&self) -> path::PathBuf {
-        // let c : String = self.file_name.clone();
-        // let p = *self.save_folder;
-
-        let mut  c = self.file_name.clone();
+    pub fn file_path(&self) -> path::PathBuf {
+        let mut c = self.file_name.clone();
         c.push_str(".png");
 
         self.save_folder.join(c)
+    }
+    pub fn character(&self) -> &String {
+        &self.character_name
+    }
+    pub fn anime(&self) -> &String {
+        &self.anime_name
     }
 }
 
