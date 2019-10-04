@@ -22,7 +22,7 @@ pub fn get_data_handler<'a>(path: String) -> Result<database::Database, Error> {
     let reader = fs::File::open(&path)?;
     let ser_data: Data = serde_yaml::from_reader(reader)?;
 
-    let db = database::Database::new(path.clone())?;
+    let db = database::Database::new(ser_data.save_location.clone())?;
 
     let download = Downloader::new(ser_data.path());
 

@@ -15,7 +15,6 @@ use std::collections::HashSet;
 
 use std::path;
 
-
 #[derive(Serialize, Deserialize, Debug)]
 struct DatabaseConfig {
     address: String,
@@ -83,22 +82,20 @@ impl Database {
                 SELECT file_id FROM rating WHERE user_id = (SELECT * FROM curr_id)
             ),
             file_to_upload as (
-                SELECT previous_ids.file_id FROM previous_ids
-                LEFT JOIN files on files.character_id = previous_ids.file_id 
-                WHERE previous_ids.file_id is null
+                SELECT files.file_id, files.character_id, files.file_name from files 
+                left join (select previous_ids.file_id from previous_ids) as fid on fid.file_id = files.file_id
+                where fid.file_id is null
                 limit 1
             ),
-            good_file_id as (
-                SELECT files.file_name, files.character_id, files.file_id FROM files where (select * from file_to_upload) = files.file_id
-            ),
             character_name as (
-                SELECT character_name, anime_id from people where character_id = (select character_id from good_file_id)
+                SELECT character_name, anime_id from people where character_id = (select character_id from file_to_upload)
             ),
             anime_name as (
                 select anime_name from anime where anime_id = (select anime_id from character_name)
             )
 
-            select (select * from anime_name), (select character_name from character_name), (select file_name from good_file_id), (select file_id from files), (select user_id from curr_id);";
+            select (select anime_name from anime_name), (select character_name from character_name), (select file_name from file_to_upload), (select file_id from file_to_upload), (select user_id from curr_id);
+            ";
 
         let data = self.conn.query(query, &[&username])?;
 
@@ -107,8 +104,8 @@ impl Database {
         let anime = row.get(0);
         let character = row.get(1);
         let file_name = row.get(2);
-        let file_id: u32 = row.get(3);
-        let user_id: u32 = row.get(4);
+        let file_id = row.get(3);
+        let user_id = row.get(4);
 
         Ok(Picture::new(
             file_name,
@@ -202,8 +199,8 @@ pub struct Picture {
     file_name: String,
     character_name: String,
     anime_name: String,
-    file_id: u32,
-    user_id: u32,
+    file_id: i32,
+    user_id: i32,
     save_folder: String,
 }
 impl Picture {
@@ -211,8 +208,8 @@ impl Picture {
         path: String,
         name: String,
         anime: String,
-        file_id: u32,
-        user_id: u32,
+        file_id: i32,
+        user_id: i32,
         save_folder: String,
     ) -> Self {
         Self {
@@ -225,8 +222,7 @@ impl Picture {
         }
     }
     pub fn file_path(&self) -> String {
-        let mut c = self.file_name.clone();
-        c.push_str(".png");
+        let c = self.file_name.clone();
 
         let mut save = self.save_folder.clone();
         save.push_str(r"\");

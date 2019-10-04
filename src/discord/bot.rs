@@ -18,8 +18,8 @@ use serenity::{
 };
 
 use serenity::framework::standard::macros::command;
-use serenity::framework::standard::{Args, Delimiter};
 use serenity::framework::standard::CommandResult;
+use serenity::framework::standard::{Args, Delimiter};
 use serenity::model::channel::Reaction;
 
 use parking_lot;
@@ -28,7 +28,6 @@ use parking_lot;
 struct Auth {
     discord_token: String,
 }
-
 
 /// Starts the discord bot
 pub fn start_bot(config_path: &path::Path, database: database::Database) -> Result<(), Error> {
@@ -49,35 +48,43 @@ pub fn start_bot(config_path: &path::Path, database: database::Database) -> Resu
     Ok(())
 }
 
-
 struct Handler {
-    db: parking_lot::RwLock<database::Database>,
+    db: parking_lot::Mutex<database::Database>,
     pictures_to_handle: HashMap<String, String>,
 }
 impl Handler {
     fn new(db: database::Database) -> Handler {
         Self {
-            db: parking_lot::RwLock::new(db),
+            db: parking_lot::Mutex::new(db),
             pictures_to_handle: HashMap::new(),
         }
     }
 
-    // send out a picture to the server. add reactions through the use of 
+    // send out a picture to the server. add reactions through the use of
     // serenity::builder::CreateMessage, and .reactions()
     fn send_picture(&self, ctx: &Context, msg: &Message, args: Args) {
         let author = &msg.author.name;
         dbg! {&author};
-        // msg.channel_id.send_message( &ctx.http, |arg| {
-        //     arg.title()
+        let db = self.db.lock();
 
-        // }
+        // TODO : write a method for checking if user exists
+        // TODO: cache the fact that this person exists in the database
+        db.create_user(&author);
 
-        // )
+        let picture = match db.fetch_file_for_user(&author) {
+            Ok(file) => file,
+            Err(e) => {
+                println! {"there was an error fetching a new file for user {}\nERROR:\t{:?}", &author, e};
+                return ();
+            }
+        };
+
+        let path = picture.file_path();
+        dbg! {&path};
     }
 }
 
 impl EventHandler for Handler {
-
     fn message(&self, ctx: Context, msg: Message) {
         dbg! {"message recieved"};
 
@@ -88,11 +95,10 @@ impl EventHandler for Handler {
         let first = match args.parse::<String>() {
             Ok(parsed) => parsed,
             Err(e) => {
-                println!{"error with parsing command: {:?}",e }
-                return ()
+                println! {"error with parsing command: {:?}",e }
+                return ();
             }
         };
-
 
         // if first arg is vote
         if first == "!vote" {
@@ -106,11 +112,8 @@ impl EventHandler for Handler {
 
     // when someone reacts, check if that person was mean to react to it in the hashmap
     // if they were, write that rating to the database
-    fn reaction_add(&self, ctx: Context, reaction: Reaction) {
-
-    }
+    fn reaction_add(&self, ctx: Context, reaction: Reaction) {}
 }
-
 
 // let msg = msg.channel_id.send_message(&ctx.http, |m| {
 //     m.content("Hello, World!");
