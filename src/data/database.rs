@@ -6,6 +6,7 @@ use serde_yaml;
 
 use std::fs;
 use std::io;
+use std::sync::Arc;
 
 use super::super::error::Error;
 use postgres;
@@ -13,6 +14,7 @@ use postgres;
 use std::collections::HashSet;
 
 use std::path;
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct DatabaseConfig {
@@ -25,14 +27,12 @@ struct DatabaseConfig {
 
 impl DatabaseConfig {
     fn new() -> Result<Self, Error> {
-        let path = std::path::Path::new("./database.yaml");
+        let path = r".\config.yaml";
 
-        let file = fs::File::open(path).expect("database.yaml DOES NOT EXIST");
+        let file = fs::File::open(&path).expect("config.yaml DOES NOT EXIST");
         let reader = io::BufReader::new(file);
 
         Ok(serde_yaml::from_reader(reader)?)
-
-        // Ok(x)
     }
     fn connection_url(&self) -> String {
         format! {"postgresql://{}:{}@{}:{}/{}",self.username, self.password, self.address, self.port, self.database_name}
@@ -40,13 +40,16 @@ impl DatabaseConfig {
 }
 
 #[derive(Debug)]
-pub struct Database<'a> {
+pub struct Database {
     conn: postgres::Connection,
-    save_folder: &'a std::path::Path,
+    save_folder: String,
 }
 
-impl<'a> Database<'a> {
-    pub fn new(save_path: &'a std::path::Path) -> Result<Self, Error> {
+// safe since Database will be in a mutex later
+unsafe impl std::marker::Sync for Database {}
+
+impl Database {
+    pub fn new(save_path: String) -> Result<Self, Error> {
         let config = DatabaseConfig::new()?;
         let url = config.connection_url();
         let connection = postgres::Connection::connect(url, postgres::TlsMode::None)?;
@@ -70,7 +73,7 @@ impl<'a> Database<'a> {
 
     // TODO: make sure .get()'s will actually return correct data (not empty strings)
     // to prevent problems in other functions
-    pub fn fetch_file_for_user(&self, username: &str) -> Result<Picture<'a>, Error> {
+    pub fn fetch_file_for_user(&self, username: &str) -> Result<Picture, Error> {
         dbg! {"fetching new file"};
 
         let query = "with curr_id as (
@@ -113,7 +116,7 @@ impl<'a> Database<'a> {
             anime,
             file_id,
             user_id,
-            self.save_folder,
+            self.save_folder.clone(),
         ))
     }
 
@@ -195,22 +198,22 @@ impl<'a> Database<'a> {
 }
 
 #[derive(Debug)]
-pub struct Picture<'a> {
+pub struct Picture {
     file_name: String,
     character_name: String,
     anime_name: String,
     file_id: u32,
     user_id: u32,
-    save_folder: &'a path::Path,
+    save_folder: String,
 }
-impl<'a> Picture<'a> {
+impl Picture {
     fn new(
         path: String,
         name: String,
         anime: String,
         file_id: u32,
         user_id: u32,
-        save_folder: &'a path::Path,
+        save_folder: String,
     ) -> Self {
         Self {
             file_name: path,
@@ -221,11 +224,15 @@ impl<'a> Picture<'a> {
             save_folder: save_folder,
         }
     }
-    pub fn file_path(&self) -> path::PathBuf {
+    pub fn file_path(&self) -> String {
         let mut c = self.file_name.clone();
         c.push_str(".png");
 
-        self.save_folder.join(c)
+        let mut save = self.save_folder.clone();
+        save.push_str(r"\");
+        save.push_str(&c);
+
+        save
     }
     pub fn character(&self) -> &String {
         &self.character_name

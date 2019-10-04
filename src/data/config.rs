@@ -14,14 +14,15 @@ use serde_yaml;
 use super::super::error::Error;
 use std::fs;
 use std::io::prelude::*;
+use std::sync::Arc;
 
 use super::database;
 
-pub fn get_data_handler<'a>(path: &'a Path) -> Result<database::Database<'a>, Error> {
-    let reader = fs::File::open(path)?;
+pub fn get_data_handler<'a>(path: String) -> Result<database::Database, Error> {
+    let reader = fs::File::open(&path)?;
     let ser_data: Data = serde_yaml::from_reader(reader)?;
 
-    let db = database::Database::new(&path)?;
+    let db = database::Database::new(path.clone())?;
 
     let download = Downloader::new(ser_data.path());
 
