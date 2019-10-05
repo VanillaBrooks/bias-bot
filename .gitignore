@@ -17,4 +17,5 @@ Cargo.lock
 /target
 #**/*.rs.bk
 downloaded_data/
-*.yaml
+
+config.yaml

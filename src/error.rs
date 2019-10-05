@@ -18,6 +18,8 @@ pub enum Error {
     IOError(std::io::Error),
     Reqwest(reqwest::Error),
     Postgres(postgres::Error),
+    DatabaseParse,
+    EmptyQuery,
 }
 
 from! {serde_yaml::Error, Error::SerdeYaml}

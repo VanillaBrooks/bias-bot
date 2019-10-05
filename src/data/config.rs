@@ -1,9 +1,10 @@
 //! Reads file that need to be downloaded from the internet and places them in the file system
 //!
 
+#![allow(unused_must_use)]
+
 use reqwest;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 
@@ -13,14 +14,15 @@ use serde_yaml;
 use super::super::error::Error;
 use std::fs;
 use std::io::prelude::*;
+use std::sync::Arc;
 
 use super::database;
 
-pub fn  get_data_handler <'a> (path: &'a Path) -> Result<database::Database <'a>, Error> {
-    let reader = fs::File::open(path)?;
+pub fn get_data_handler<'a>(path: String) -> Result<database::Database, Error> {
+    let reader = fs::File::open(&path)?;
     let ser_data: Data = serde_yaml::from_reader(reader)?;
 
-    let db = database::Database::new(&path)?;
+    let db = database::Database::new(ser_data.save_location.clone())?;
 
     let download = Downloader::new(ser_data.path());
 
@@ -75,7 +77,7 @@ impl<'a> Downloader<'a> {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct Data {
+struct Data {
     shows: Vec<Anime>,
     save_location: String,
 }
@@ -84,35 +86,16 @@ impl Data {
     pub fn path(&self) -> &Path {
         Path::new(&self.save_location)
     }
-    pub fn shows(&self) -> &Vec<Anime> {
-        &self.shows
-    }
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct Anime {
+struct Anime {
     name: String,
     characters: Vec<Character>,
 }
-impl Anime {
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-    pub fn characters(&self) -> &Vec<Character> {
-        &self.characters
-    }
-}
 
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct Character {
+struct Character {
     name: String,
     links: Vec<String>,
-}
-impl Character {
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-    pub fn links(&self) -> &Vec<String> {
-        &self.links
-    }
 }
