@@ -16,7 +16,8 @@ CREATE TABLE people
 CREATE TABLE users 
 (
     user_id SERIAL PRIMARY KEY,
-    username VARCHAR(30) NOT NULL UNIQUE
+    username VARCHAR(30) NOT NULL UNIQUE,
+    discord_id BIGINT NOT NULL UNIQUE
 );
 
 CREATE TABLE files
@@ -32,5 +33,7 @@ CREATE TABLE rating
 (
     user_id SERIAL REFERENCES users(user_id),
     file_id SERIAL REFERENCES files(file_id),
-    score SMALLINT NOT NULL
+    score SMALLINT NOT NULL,
+    unique(user_id, file_id)
 );
+

@@ -1,0 +1,15 @@
+
+
+shows:
+  - name: Bunny Girl Senpai
+    characters:
+      - name:  Mai Sakurajima
+        links:
+          - https://s1.zerochan.net/Sakurajima.Mai.600.2611405.jpg
+
+      - name: Kaede Azusagawa
+        links:
+          - https://proxy.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F58%2F70%2F39%2F587039bdc46d4e4af67395e02a54c123.jpg&f=1&nofb=1
+
+
+save_location: "downloaded_data"
