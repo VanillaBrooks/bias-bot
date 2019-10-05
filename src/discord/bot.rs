@@ -26,8 +26,6 @@ use serenity::model::id::ChannelId;
 
 use parking_lot;
 
-use lazy_static::lazy_static;
-
 const ONE: &str = "1\u{20e3}";
 const TWO: &str = "2\u{20e3}";
 const THREE: &str = "3\u{20e3}";
@@ -121,10 +119,9 @@ impl Handler {
 
 impl EventHandler for Handler {
     fn message(&self, ctx: Context, msg: Message) {
-
         let user_id = msg.author.id.as_u64();
         if *user_id == BOT_ID {
-            return ()
+            return ();
         }
 
         dbg! {"message recieved"};
@@ -154,7 +151,6 @@ impl EventHandler for Handler {
     // when someone reacts, check if that person was mean to react to it in the hashmap
     // if they were, write that rating to the database
     fn reaction_add(&self, ctx: Context, reaction: Reaction) {
-
         // if the reaction was made by us it doesnt matter
         let user_id = reaction.user_id.as_u64();
         if *user_id == BOT_ID {
@@ -224,47 +220,9 @@ impl EventHandler for Handler {
                     return ();
                 }
             }
-            
         }
         // hashmap and database mutex dropped
-
 
         self.send_picture(&ctx, &reaction.channel_id, user_id);
     }
 }
-
-// let msg = msg.channel_id.send_message(&ctx.http, |m| {
-//     m.content("Hello, World!");
-//     m.embed(|e| {
-//         e.title("This is a title");
-//         e.description("This is a description");
-//         e.image("attachment://downloaded_data/2163536056233450499.png.png");
-//         e.fields(vec![
-//             ("This is the first field", "This is a field body", true),
-//             (
-//                 "This is the second field",
-//                 "Both of these fields are inline",
-//                 true,
-//             ),
-//             (
-//                 "This is the fourth field",
-//                 "Both of these fields are inline",
-//                 true,
-//             ),
-//         ]);
-//         e.field(
-//             "This is the third field",
-//             "This is not an inline field",
-//             false,
-//         );
-//         e.footer(|f| {
-//             f.text("This is a footer");
-
-//             f
-//         });
-
-//         e
-//     });
-//     // m.add_file(AttachmentType::Path(Path::new("./downloaded_data/2163536056233450499.png")));
-//     m
-// });

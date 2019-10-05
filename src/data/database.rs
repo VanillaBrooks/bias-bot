@@ -85,6 +85,7 @@ impl Database {
                 SELECT files.file_id, files.character_id, files.file_name from files 
                 left join (select previous_ids.file_id from previous_ids) as fid on fid.file_id = files.file_id
                 where fid.file_id is null
+                ORDER BY random()
                 limit 1
             ),
             character_name as (
@@ -103,13 +104,12 @@ impl Database {
         if data.len() == 0 {
             self.pull_random_file(discord_id)
         } else {
-
             match row_matcher(data.get(0), self.save_folder.clone()) {
                 Ok(good_picture) => Ok(good_picture),
-                Err(err) => match err{
+                Err(err) => match err {
                     Error::Postgres(_) | Error::DatabaseParse => self.pull_random_file(discord_id),
-                    _ => Err(Error::DatabaseParse)
-                }
+                    _ => Err(Error::DatabaseParse),
+                },
             }
         }
     }
@@ -118,7 +118,7 @@ impl Database {
         // dbg!{"pulling random file"};
 
         let query = "with curr_file as (
-                SELECT file_id, character_id, file_name FROM files limit 1
+                SELECT file_id, character_id, file_name FROM files ORDER BY random() limit 1
             ),
             curr_character_name as (
                 SELECT character_name, anime_id from people WHERE character_id = (select character_id from curr_file)
@@ -257,7 +257,6 @@ impl Picture {
         &self.file_id
     }
 }
-
 
 // (SELECT anime_name from anime_name), (SELECT character_name from curr_character_name), (SELECT file_name from curr_file), (select file_id from curr_file)
 
